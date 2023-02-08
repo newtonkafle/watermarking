@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from PIL import Image
 
 
 class App(tk.Tk):
@@ -9,9 +10,10 @@ class App(tk.Tk):
         self.geometry('500x300')
         self.frame = FirstPage(self)
 
-    def openpage2(self):
+    def openpage2(self, image=None):
         self.frame.destroy()
-        self.frame = Page2(self)
+        self.frame = EditPage(self)
+        self.frame.load_image(image)
 
 
 class FirstPage(tk.Frame):
@@ -44,18 +46,53 @@ class FirstPage(tk.Frame):
         self.btn_exit_window.grid(column=0, row=2, sticky='w', pady=3)
 
     def handle_image(self):
-        self.filename = filedialog.askopenfilename(
+        '''ask user for the image and initialized path to the image'''
+        self.image_file = filedialog.askopenfilename(
             initialdir='/', title='select file')
-        print(self.filename)
+        im = Image.open(self.image_file)
+        if im is not None:
+            self.master.openpage2(im)
 
 
-class Page2(tk.Frame):
+class EditPage(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
-        self.master.geometry('400x400')
+        self.master.geometry('800x600')
+        self.update()
+        self.window_width = self.master.winfo_width()
         self.grid()
-        self.welcome = tk.Label(self, text='welcome to the application ')
-        self.welcome.grid()
+        self.button_frame = tk.Frame(
+            self, padx=(self.window_width/2 - 80), pady=15)
+        self.button_frame.grid(column=1, row=0, columnspan=3)
+        self.btn_add_text = tk.Button(self.button_frame, text="Add text")
+        self.btn_add_text.grid(column=0, row=0, padx=10)
+        self.btn_add_logo = tk.Button(self.button_frame, text="Add logo")
+        self.btn_add_logo.grid(column=1, row=0)
+
+        # creating the empty labels
+        em1 = tk.Label(self)
+        em2 = tk.Label(self)
+        em1.grid(column=0, row=1)
+        em2.grid(column=2, row=1)
+
+        # creating a canvas
+        self.picture_canvas = tk.Canvas(self,
+                                        width=700, height=500, background='green')
+        self.picture_canvas.grid(column=1, row=1, padx=25, pady=5)
+
+        self.master.bind('<Configure>', self.get_window_size)
+
+    def get_window_size(self, event):
+        # adding the responsive design for the buttons
+        if event.widget == self.master:
+            self.button_frame.configure(padx=event.width/2 - 100)
+            print(self.window_width)
+
+    # initilaized the image to load
+    def load_image(self, image):
+        print(image.filename)
+        # self.image = tk.PhotoImage(
+        #     width=image.size[0], height=image.size[1], file=f'{image.filename}')
 
 
 app = App()
