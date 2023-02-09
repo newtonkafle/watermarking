@@ -1,6 +1,7 @@
 import tkinter as tk
 from inner_workings import FirstPageHandlers, MainPageHandlers
 from PIL import Image, ImageTk
+from tkinter import font
 
 
 class App(tk.Tk):
@@ -8,7 +9,7 @@ class App(tk.Tk):
         tk.Tk.__init__(self)
         self.title('Watermark Everything')
         self.geometry('500x300')
-        self.frame = FirstPage(self)
+        self.frame = MainPage(self)
 
     def openpage2(self, image=None):
         self.frame.destroy()
@@ -25,7 +26,7 @@ class FirstPage(tk.Frame):
         self.handlers = FirstPageHandlers()
 
         # creating the image object to import into the canvas
-        self.logo = tk.PhotoImage(height=200, width=200, file='../logo.png')
+        self.logo = tk.PhotoImage(height=200, width=200, file='./logo.png')
 
         # creating the canvas for the image
         self.image_canvas = tk.Canvas(self, height=200, width=200)
@@ -63,13 +64,13 @@ class MainPage(tk.Frame):
 
         self.grid()
         self.image = None
-        self.load_item_to_interface()
+
         # creating the buttons on the top of the window
         self.button_frame = tk.Frame(
             self, pady=15)
         self.button_frame.grid(column=1, row=0, columnspan=4)
         self.btn_add_text = tk.Button(
-            self.button_frame, text="Add text", command="")
+            self.button_frame, text="Add text", command=self.add_text)
         self.btn_add_text.grid(column=0, row=0, padx=10)
         self.btn_add_logo = tk.Button(self.button_frame, text="Add logo")
         self.btn_add_logo.grid(column=1, row=0)
@@ -94,36 +95,40 @@ class MainPage(tk.Frame):
             label.grid(row=i+1, column=0, sticky='w')
 
         # creating the variables to track the values of the option box
-        font_choice = tk.StringVar()
-        font_size_choice = tk.IntVar()
-        font_color_choice = tk.StringVar()
+        self.font_choice = tk.StringVar()
+        self.font_size_choice = tk.IntVar()
+        self.font_color_choice = tk.StringVar()
+        self.water_mark_text = tk.StringVar()
 
         # creating the combobox to choose the fonts
         self.font_box = tk.OptionMenu(
-            self.properties_frame, font_choice, *
+            self.properties_frame, self.font_choice, *
             self.handlers.handle_combo_boxes()[0],
             command=self.handlers.get_font_choice)
         self.font_box.grid(row=1, column=2, sticky='w')
 
         # creating the option  box for font sizes
         self.font_size_box = tk.OptionMenu(
-            self.properties_frame, font_size_choice, *
+            self.properties_frame, self.font_size_choice, *
             self.handlers.handle_combo_boxes()[1],
             command=self.handlers.get_font_size_choice)
         self.font_size_box.grid(row=2, column=2, sticky='w')
 
         # creating the option box choose the colors
         self.font_color_box = tk.OptionMenu(
-            self.properties_frame, font_color_choice, *
+            self.properties_frame, self.font_color_choice, *
             self.handlers.handle_combo_boxes()[2],
             command=self.handlers.get_font_color_choice)
         self.font_color_box.grid(row=3, column=2, sticky='w')
 
+        # creating the text box to get the texts
+        self.watermark_text = tk.Entry(
+            self.properties_frame,
+            textvariable=self.water_mark_text,
+            width=15)
+        self.watermark_text.bind('<Return>', self.change_text)
+        self.watermark_text.grid(row=4, column=2, sticky="w")
         self.update()
-
-    def load_item_to_interface(self):
-        # loading the fonts to select
-        self._drag_item_details = {'x': 0, 'y': 0, "item": None}
 
     def load_images(self, image):
         '''pass images to the handlers which return the photo objects for the canvas'''
@@ -132,7 +137,65 @@ class MainPage(tk.Frame):
             350, 250, image=self.image)
         self.update()
 
+    # adding the text to the canvas
+    # binding mouse press , release and motion withthe methods for drag and drop support
+    def add_text(self):
+        text = 'Your Text Here'
+        self.text_canvas = self.picture_canvas.create_text(
+            50, 50, text=text, tags='texts')
+        self.picture_canvas.tag_bind(
+            'texts', '<ButtonPress-1>', self.drag_start)
+        self.picture_canvas.tag_bind(
+            'texts', '<ButtonRelease-1>', self.drag_stop)
+        self.picture_canvas.tag_bind('texts', '<B1-Motion>', self.drag)
+        self.watermark_text.insert(0, text)
+        self.get_current_font()
+        self.update()
+
     # support for the drag and drop
+
+    def drag_start(self, event):
+        self.handlers.set_drag_item_details(
+            item=self.picture_canvas.find_closest(event.x, event.y)[0],
+            x=event.x,
+            y=event.y)
+
+    def drag(self, event):
+        (delta_x, delta_y) = self.handlers.drag(event)
+        # moving the object by appropriate amount
+        self.picture_canvas.move(
+            self.handlers.get_drag_item_details()['item'], delta_x, delta_y)
+
+    def drag_stop(self, event):
+        self.handlers.drag_stop()
+
+    # get the current font of the text
+    def get_current_font(self):
+        self.handlers.get_current_font_details(
+            curr_font=self.picture_canvas.itemconfig(self.text_canvas, 'font')[-1])
+        self.change_combobox_defaults()
+
+    # change the combox default labels
+    def change_combobox_defaults(self):
+        self.font_choice.set(self.handlers.font_family)
+        self.font_size_choice.set(self.handlers.font_size)
+        self.font_color_choice.set('White')
+
+    # handling the text inside the canvas
+    def change_font(self):
+        pass
+
+    def change_font_size(self):
+        pass
+
+    def change_font_color(self):
+        pass
+
+    def change_text(self, event):
+        # chnage the text in the canvas
+        self.picture_canvas.itemconfig(
+            self.text_canvas, text=self.water_mark_text.get())
+        # self.get_current_font_details()
 
 
 if __name__ == "__main__":
