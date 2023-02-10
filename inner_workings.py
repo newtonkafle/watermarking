@@ -35,6 +35,7 @@ class MainPageHandlers:
         self.font_family = None
         self.font_size = None
         self.font_weight = None
+        self.font_color = None
 
     def get_drag_item_details(self):
         return self._drag_item_details
@@ -48,15 +49,6 @@ class MainPageHandlers:
 
     def handle_combo_boxes(self):
         return (self.fonts, self.fonts_sizes, self.font_colors)
-
-    def get_font_choice(self, choice):
-        return choice
-
-    def get_font_size_choice(self, choice):
-        return choice
-
-    def get_font_color_choice(self, choice):
-        return choice
 
     def load_images(self, image):
         image1 = Image.open(image.filename)
@@ -81,11 +73,9 @@ class MainPageHandlers:
         self._drag_item_details['y'] = 0
 
     # getting the current font details
-
     def get_current_font_details(self, curr_font):
         font_obj = font.nametofont(curr_font)
         font_obj = font_obj.actual()
-        self.font_family = font_obj['family']
+        self.font_family = font_obj['family'][1:]
         self.font_size = font_obj['size']
         self.font_weight = font_obj['weight']
-        print(font_obj)

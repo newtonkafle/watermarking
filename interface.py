@@ -104,21 +104,21 @@ class MainPage(tk.Frame):
         self.font_box = tk.OptionMenu(
             self.properties_frame, self.font_choice, *
             self.handlers.handle_combo_boxes()[0],
-            command=self.handlers.get_font_choice)
+            command=self.handle_font_selection)
         self.font_box.grid(row=1, column=2, sticky='w')
 
         # creating the option  box for font sizes
         self.font_size_box = tk.OptionMenu(
             self.properties_frame, self.font_size_choice, *
             self.handlers.handle_combo_boxes()[1],
-            command=self.handlers.get_font_size_choice)
+            command=self.handle_font_size)
         self.font_size_box.grid(row=2, column=2, sticky='w')
 
         # creating the option box choose the colors
         self.font_color_box = tk.OptionMenu(
             self.properties_frame, self.font_color_choice, *
             self.handlers.handle_combo_boxes()[2],
-            command=self.handlers.get_font_color_choice)
+            command=self.handle_font_color)
         self.font_color_box.grid(row=3, column=2, sticky='w')
 
         # creating the text box to get the texts
@@ -182,14 +182,25 @@ class MainPage(tk.Frame):
         self.font_color_choice.set('White')
 
     # handling the text inside the canvas
-    def change_font(self):
-        pass
+    def handle_font_selection(self, choice):
+        choice = choice.replace(" ", "")
+        self.picture_canvas.itemconfig(
+            self.text_canvas, font=(choice, self.handlers.font_size))
+        # update the font-family for next use
+        self.handlers.font_family = choice
 
-    def change_font_size(self):
-        pass
+    def handle_font_size(self, choice):
+        self.picture_canvas.itemconfig(
+            self.text_canvas, font=(self.handlers.font_family, choice))
+        # updating the font-size for next user
+        self.handlers.font_size = choice
 
-    def change_font_color(self):
-        pass
+    def handle_font_color(self, choice):
+        print(choice)
+        self.picture_canvas.itemconfig(
+            self.text_canvas, fill=choice)
+        # updating the font color for next use
+        self.handlers.font_color = choice
 
     def change_text(self, event):
         # chnage the text in the canvas
