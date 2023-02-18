@@ -9,7 +9,7 @@ class App(tk.Tk):
         tk.Tk.__init__(self)
         self.title('Watermark Everything')
         self.geometry('500x300')
-        self.frame = MainPage(self)
+        self.frame = FirstPage(self)
 
     def openpage2(self, image=None):
         self.frame.destroy()
@@ -65,6 +65,9 @@ class MainPage(tk.Frame):
         self.grid()
         self.image = None
 
+        # initializing the variables for the canvas
+        self.text_canvas = None
+
         # creating the buttons on the top of the window
         self.button_frame = tk.Frame(
             self, pady=15)
@@ -83,7 +86,8 @@ class MainPage(tk.Frame):
         self.picture_canvas = tk.Canvas(self,
                                         width=700, height=500, background='black')
 
-        self.picture_canvas.grid(column=1, row=1, pady=5, sticky='w')
+        self.picture_canvas.grid(
+            column=1, row=1, pady=5, sticky='w', rowspan=4)
 
         # creating frame for the propertise fields
         self.properties_frame = tk.Frame(self)
@@ -98,7 +102,7 @@ class MainPage(tk.Frame):
         self.font_choice = tk.StringVar()
         self.font_size_choice = tk.IntVar()
         self.font_color_choice = tk.StringVar()
-        self.water_mark_text = tk.StringVar()
+        self.water_mark_text_interface = tk.StringVar()
 
         # creating the combobox to choose the fonts
         self.font_box = tk.OptionMenu(
@@ -122,13 +126,24 @@ class MainPage(tk.Frame):
         self.font_color_box.grid(row=3, column=2, sticky='w')
 
         # creating the text box to get the texts
-        self.watermark_text = tk.Entry(
+        self.watermark_text_field = tk.Entry(
             self.properties_frame,
-            textvariable=self.water_mark_text,
+            textvariable=self.water_mark_text_interface,
             width=15)
-        self.watermark_text.bind('<Return>', self.change_text)
-        self.watermark_text.grid(row=4, column=2, sticky="w")
+        self.watermark_text_field.bind('<Return>', self.change_text)
+        self.watermark_text_field.grid(row=4, column=2, sticky="w")
         self.update()
+
+        # creating the frame for the save and exits buttons
+        self.final_button_frame = tk.Frame(self)
+        self.final_button_frame.grid(row=2, column=2, sticky='nw')
+
+        # buttons for the buttons framec
+        self.btn_save = tk.Button(
+            self.final_button_frame, text="Save", command=self.handlers.write_on_image)
+        self.btn_exit = tk.Button(self.final_button_frame, text="Exit")
+        self.btn_save.grid(column=0, row=0)
+        self.btn_exit.grid(column=1, row=0)
 
     def load_images(self, image):
         '''pass images to the handlers which return the photo objects for the canvas'''
@@ -140,15 +155,15 @@ class MainPage(tk.Frame):
     # adding the text to the canvas
     # binding mouse press , release and motion withthe methods for drag and drop support
     def add_text(self):
-        text = 'Your Text Here'
+        # self.handlers.water_mark_text = 'Your Text Here'
         self.text_canvas = self.picture_canvas.create_text(
-            50, 50, text=text, tags='texts')
+            50, 50, text=self.handlers.water_mark_text, tags='texts')
         self.picture_canvas.tag_bind(
             'texts', '<ButtonPress-1>', self.drag_start)
         self.picture_canvas.tag_bind(
             'texts', '<ButtonRelease-1>', self.drag_stop)
         self.picture_canvas.tag_bind('texts', '<B1-Motion>', self.drag)
-        self.watermark_text.insert(0, text)
+        self.watermark_text_field.insert(0, self.handlers.water_mark_text)
         self.get_current_font()
         self.update()
 
@@ -158,13 +173,16 @@ class MainPage(tk.Frame):
         self.handlers.set_drag_item_details(
             item=self.picture_canvas.find_closest(event.x, event.y)[0],
             x=event.x,
-            y=event.y)
+            y=event.y,
+        )
 
     def drag(self, event):
-        (delta_x, delta_y) = self.handlers.drag(event)
+        (distance_x, distance_y) = self.handlers.drag(event)
         # moving the object by appropriate amount
         self.picture_canvas.move(
-            self.handlers.get_drag_item_details()['item'], delta_x, delta_y)
+            self.handlers.get_drag_item_details(
+            )['item'], distance_x, distance_y
+        )
 
     def drag_stop(self, event):
         self.handlers.drag_stop()
@@ -174,8 +192,8 @@ class MainPage(tk.Frame):
         self.handlers.get_current_font_details(
             curr_font=self.picture_canvas.itemconfig(self.text_canvas, 'font')[-1])
         self.change_combobox_defaults()
-
     # change the combox default labels
+
     def change_combobox_defaults(self):
         self.font_choice.set(self.handlers.font_family)
         self.font_size_choice.set(self.handlers.font_size)
@@ -183,20 +201,22 @@ class MainPage(tk.Frame):
 
     # handling the text inside the canvas
     def handle_font_selection(self, choice):
-        choice = choice.replace(" ", "")
+        # making it more readable for user
+        # choice = choice.split("-")[0]
         self.picture_canvas.itemconfig(
-            self.text_canvas, font=(choice, self.handlers.font_size))
+            self.text_canvas, font=(choice, self.handlers.font_size)
+        )
         # update the font-family for next use
         self.handlers.font_family = choice
 
     def handle_font_size(self, choice):
         self.picture_canvas.itemconfig(
-            self.text_canvas, font=(self.handlers.font_family, choice))
+            self.text_canvas, font=(self.handlers.font_family, choice)
+        )
         # updating the font-size for next user
         self.handlers.font_size = choice
 
     def handle_font_color(self, choice):
-        print(choice)
         self.picture_canvas.itemconfig(
             self.text_canvas, fill=choice)
         # updating the font color for next use
@@ -205,8 +225,9 @@ class MainPage(tk.Frame):
     def change_text(self, event):
         # chnage the text in the canvas
         self.picture_canvas.itemconfig(
-            self.text_canvas, text=self.water_mark_text.get())
-        # self.get_current_font_details()
+            self.text_canvas, text=self.water_mark_text_interface.get()
+        )
+        self.handlers.water_mark_text = self.water_mark_text_interface.get()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,13 @@
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFont, ImageDraw
 from tkinter import filedialog
 from tkinter import font
 import matplotlib.colors as clr
+import glob
+import os
+
+
+F_PATH = '/Users/newtonkafle/Library/Fonts'
 
 
 class FirstPageHandlers:
@@ -21,21 +26,41 @@ class FirstPageHandlers:
 
 class MainPageHandlers:
     def __init__(self):
-        self.fonts = list(font.families())
-        self.fonts_sizes = [size for size in range(100)]
-        self.font_colors = clr.CSS4_COLORS.keys()
+
+        # details for loading up the fonts
+        self._fonts = []
+        self._fonts_sizes = []
+        self._font_colors = []
+
+        self.load_fonts()
 
         # handling images
         self.image = None
+        self.thumbnail_image = None
 
         # record drag items
         self._drag_item_details = {'x': 0, 'y': 0, "item": None}
+
+        # image co-ordinates
+        self.image_x = 0
+        self.image_y = 0
+
+        # record the text to be watermarked
+        self.water_mark_text = 'Your text Here'
 
         # fonts details
         self.font_family = None
         self.font_size = None
         self.font_weight = None
         self.font_color = None
+
+    def load_fonts(self):
+        fonts = glob.glob(pathname=f'{F_PATH}'+"/*.ttf")
+        for font in fonts:
+            font = os.path.basename(font)[:-4]
+            self._fonts.append(font)
+        self._fonts_sizes = [size for size in range(100)]
+        self._font_colors = clr.CSS4_COLORS.keys()
 
     def get_drag_item_details(self):
         return self._drag_item_details
@@ -48,24 +73,24 @@ class MainPageHandlers:
     # combo box hnadlers
 
     def handle_combo_boxes(self):
-        return (self.fonts, self.fonts_sizes, self.font_colors)
+        return (self._fonts, self._fonts_sizes, self._font_colors)
 
     def load_images(self, image):
-        image1 = Image.open(image.filename)
-        image1.load()
-        image1 = image1.resize((700, 500), Image.ANTIALIAS)
-        return ImageTk.PhotoImage(image1)
+        self.image = Image.open(image.filename)
+        self.image.load()
+        self.thumbnail_image = self.image.resize((700, 500), Image.ANTIALIAS)
+        return ImageTk.PhotoImage(self.thumbnail_image)
 
     # drag and drop support
     def drag(self, event):
-        delta_x = event.x - self._drag_item_details['x']
-        delta_y = event.y - self._drag_item_details['y']
+        distace_of_x = event.x - self._drag_item_details['x']
+        distance_of_y = event.y - self._drag_item_details['y']
 
-        # record the new position
-        self._drag_item_details['x'] = event.x
-        self._drag_item_details['y'] = event.y
+        # record the co-ordinates of the  new position
+        self.image_x = self._drag_item_details['x'] = event.x
+        self.image_y = self._drag_item_details['y'] = event.y
 
-        return delta_x, delta_y
+        return distace_of_x, distance_of_y
 
     def drag_stop(self):
         self._drag_item_details['items'] = None
@@ -79,3 +104,21 @@ class MainPageHandlers:
         self.font_family = font_obj['family'][1:]
         self.font_size = font_obj['size']
         self.font_weight = font_obj['weight']
+
+    def write_on_image(self):
+
+        edit_image = ImageDraw.Draw(self.image)
+        font = f'{F_PATH}/{self.font_family}.ttf'
+        img_font = ImageFont.truetype(
+            font=font, size=self.font_size)
+
+        (width, height) = self.image.size
+        print(width, height)
+        edit_image.text(
+            ((self.image_x + (width - 700)/2),
+             (self.image_y + (height - 500)/2)),
+            text=self.water_mark_text,
+            fill=self.font_color,
+            font=img_font,
+        )
+        self.image.save('result.jpg')
