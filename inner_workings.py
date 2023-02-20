@@ -87,8 +87,8 @@ class MainPageHandlers:
         distance_of_y = event.y - self._drag_item_details['y']
 
         # record the co-ordinates of the  new position
-        self.image_x = self._drag_item_details['x'] = event.x
-        self.image_y = self._drag_item_details['y'] = event.y
+        self._drag_item_details['x'] = event.x
+        self._drag_item_details['y'] = event.y
 
         return distace_of_x, distance_of_y
 
@@ -112,11 +112,23 @@ class MainPageHandlers:
         img_font = ImageFont.truetype(
             font=font, size=self.font_size)
 
+        # getting the original image size
         (width, height) = self.image.size
-        print(width, height)
+
+        # getting the text size
+        (text_w, text_h) = edit_image.textsize(self.water_mark_text)
+
+        # upscaling the image here
+        self.image_y = self.image_y * (height/500)
+        if self.image_x > 1690:
+            self.image_x = self.image_x + text_w
+        elif self.image_x > 125:
+            self.image_x = self.image_x * (width/700) - text_w
+        else:
+            self.image_x = self.image_x - text_w/2
+
         edit_image.text(
-            ((self.image_x + (width - 700)/2),
-             (self.image_y + (height - 500)/2)),
+            (self.image_x, self.image_y),
             text=self.water_mark_text,
             fill=self.font_color,
             font=img_font,

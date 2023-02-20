@@ -185,6 +185,8 @@ class MainPage(tk.Frame):
         )
 
     def drag_stop(self, event):
+        self.handlers.image_x, self.handlers.image_y = self.picture_canvas.coords(
+            self.text_canvas)
         self.handlers.drag_stop()
 
     # get the current font of the text
